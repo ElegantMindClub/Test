@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division
 import psychopy
-psychopy.useVersion('latest')
 from psychopy import locale_setup, prefs, sound, gui, visual, core, data, event, logging, clock, monitors
 from psychopy.hardware import keyboard
 import os, time, csv

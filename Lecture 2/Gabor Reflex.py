@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, division
 import psychopy
-psychopy.useVersion('latest')
+
 from psychopy import locale_setup, prefs, sound, gui, visual, core, data, event, logging, clock, monitors
 import numpy as np
 from numpy import (sin, cos, tan, log, log10, pi, average,
