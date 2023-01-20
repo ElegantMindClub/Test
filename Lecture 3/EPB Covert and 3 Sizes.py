@@ -1,17 +1,19 @@
+from __future__ import absolute_import, division
 import psychopy
-from psychopy import gui, visual, core, event, monitors, prefs
-prefs.hardware['audioLib'] = ['ptb', 'pyo']
-from psychopy.sound import Sound
-from psychopy.event import waitKeys
-import numpy as np  
-import os, sys, time, random, math, csv
+psychopy.useVersion('latest')
+from psychopy import locale_setup, prefs, sound, gui, visual, core, data, event, logging, clock, monitors
+import numpy as np
+from numpy import (sin, cos, tan, log, log10, pi, average,
+                   sqrt, std, deg2rad, rad2deg, linspace, asarray)
+from numpy.random import random, randint, normal, shuffle
+from psychopy.hardware import keyboard
+import os, time, csv, random
 
-angles = [0, 5, 10, 15, 20, 25, 30, 35, 40]
+angles = [0, 12, 24, 36]
+sizes = [4, 6 ,8]
 directions = [0, 2] #0 is right, 2 is left
-faces = [5]
-trials = 10
-prePracticeBreak = 10
-postPracticeBreak = 10
+letters = list('EPB')
+trials = 5
 
 def csvOutput(output, fileName):
     with open(fileName, 'a', newline='') as csvFile:
@@ -28,20 +30,15 @@ def csvInput(fileName):
 
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(_thisDir)
-facefile = os.path.join(os.getcwd(), 'eccentricity_monitor_calibration.csv')     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-if not os.path.isfile(facefile):
+gaborfile = os.path.join(os.getcwd(), 'eccentricity_monitor_calibration.csv')
+if not os.path.isfile(gaborfile):
     print('You must run the eccentricity_calibration.py script to set up your monitor')
     time.sleep(5)
     core.quit()
 
-tvInfo = csvInput(facefile)
- 
-#heightMult = float(tvInfo['height'])
-distToScreen = float(tvInfo['Distance to screen'])
-faceHeightMult = float(tvInfo['faceHeight'])
-faceWidthMult = float(tvInfo['faceWidth'])
+tvInfo = csvInput(gaborfile)
 
-#distToScreen = float(tvInfo['Distance to screen'])
+distToScreen = float(tvInfo['Distance to screen'])
 heightMult, spacer = float(tvInfo['height']), float(tvInfo['spacer'])
 circleMult = float(tvInfo['circleRadius'])
 centerX, centerY = float(tvInfo['centerx']), float(tvInfo['centery'])
@@ -61,7 +58,7 @@ recordData = datadlg.OK
 
 if recordData:
     date = time.strftime("%m_%d")
-    expName = 'Face One Decision Covert'
+    expName = 'EPB Covert and 3 Sizes'
     expInfo = {'Subject Name': ''}
     
     dlg = gui.DlgFromDict(dictionary=expInfo, sortKeys=False, title=expName)
@@ -81,15 +78,15 @@ ok_data2 = datadlg.show()
 if ok_data2 is None:
     endExp()
 elif ok_data2[0] == 'Left':
-    centerX = -(leftEdge-4)
+    centerX = -(leftEdge-3)
     dirExclusions = [2]
 elif ok_data2[0] == 'Right':
-    centerX = rightEdge-4
+    centerX = rightEdge-3
     dirExclusions = [0]
 else:
     dirExclusions = []
 
-headers = ['Face', 'Direction', 'Eccentricity', 'Reaction Time (s)']
+headers = ['Letter', 'Direction', 'Eccentricity', 'Reaction Time (s)', 'Stim Size']
 if not os.path.isfile(fileName):
     csvOutput(headers, fileName)
 
@@ -122,14 +119,16 @@ def displaceCalc(angle):
     xDisp = np.tan(angleRad)*distToScreen
     return xDisp
     
-def checkcorrect(response, face):
+def checkcorrect(response, letter):
     if response == 'escape':
         endExp()
     elif response == 'v':
-        ans = 5
-    else:
-        ans = -1
-    return (ans == face)
+        ans = 'E'
+    elif response == 'b':
+        ans = 'P'
+    elif response == 'n':
+        ans = "B"
+    return (ans == letter)
 
 cross = visual.ShapeStim(
     win=win, name='Cross', vertices='cross',units='cm', 
@@ -139,21 +138,20 @@ cross = visual.ShapeStim(
     fillColor=[1,1,1], fillColorSpace='rgb',
     opacity=1, depth=-1.0, interpolate=True)
     
-feedbackBeep = Sound(value='A', secs=0.5, octave=4, stereo=-1, volume=1.0)
-    
-def getFace():
-    faceNum = random.choice(faces)
-    imageFile = (os.path.join(os.getcwd(), 'Faces', ('face'+str(faceNum)+'.jpg')))
-    return {'file': imageFile, 'facenum': faceNum}
+radius = displaceCalc(4)*circleMult
 
 
 def instructions():
-    genDisplay({'text': 'Press "V" when you see the face',\
-        'xPos': 0, 'yPos': centerY+2, 'heightCm': 1.5, 'color': 'white'}).draw()
-    genDisplay({'text': 'Please keep your eyes fixed in the center',\
+    genDisplay({'text': 'Press "V" when you see the "E" displayed',\
+        'xPos': 0, 'yPos': centerY+4, 'heightCm': 1, 'color': 'white'}).draw()
+    genDisplay({'text': 'and "B" when you see the "P" displayed',\
+        'xPos': 0, 'yPos': centerY+2, 'heightCm': 1, 'color': 'white'}).draw()
+    genDisplay({'text': 'and "N" when you see the "B" displayed',\
         'xPos': 0, 'yPos': centerY,'heightCm': 1, 'color': 'white'}).draw()
-    genDisplay({'text': 'Press the spacebar to continue',\
+    genDisplay({'text': 'Please keep your eyes fixed in the center',\
         'xPos': 0, 'yPos': centerY-2,'heightCm': 1, 'color': 'white'}).draw()
+    genDisplay({'text': 'Press the spacebar to continue',\
+        'xPos': 0, 'yPos': centerY-4,'heightCm': 1, 'color': 'white'}).draw()
     win.flip()
     keyy = event.waitKeys(keyList = ['space', 'escape']) 
     if keyy[0] == 'escape': 
@@ -161,19 +159,6 @@ def instructions():
         logging.flush()
         win.close()
         core.quit()
-        
-faceHeight = displaceCalc(8)*faceHeightMult
-faceWidth = displaceCalc(8)*faceWidthMult
-
-facestuff = getFace()
-facefile = facestuff['file']
-
-drawface = visual.ImageStim( 
-    win=win, units='cm', image= facefile, 
-    size = (faceWidth,faceHeight),
-    interpolate=True) 
-    
-
 
 def expBreak():
     dispInfo = {'text': 'Break', 'xPos': 0, 'yPos': centerY+4, 'heightCm': 3, 'color': 'white'}
@@ -186,14 +171,15 @@ def expBreak():
         win.flip()
         time.sleep(1)
         
+        
 def inBounds(trialInfo):
     if trialInfo['dir'] in dirExclusions:
         return False
     if trialInfo['dir'] == 0:
-        if ((centerX + displaceCalc(trialInfo['angle']))+(displaceCalc(8)*.5)) > rightEdge:
+        if (centerX + displaceCalc(trialInfo['angle'])) > rightEdge:
             return False
     elif trialInfo['dir'] == 2:
-        if ((centerX - displaceCalc(trialInfo['angle']))-(displaceCalc(8)*.5)) < (-leftEdge):
+        if (centerX - displaceCalc(trialInfo['angle'])) < (-leftEdge):
             return False
     return True
 
@@ -202,123 +188,39 @@ def genPairs():
     for i in range(trials):
         for j in range(len(angles)):
             for k in range(len(directions)):
-                pairs.append((j*10)+k)
+                for l in range(len(sizes)):
+                    pairs.append((j*10)+k+(l*.1))
     random.shuffle(pairs)
     return pairs
     
 def interpretPair(pair):
     angle = angles[int(pair/10)]
     direction = directions[int(pair%10)]
+    stimsize = sizes[round((pair-int(pair))/0.1)]
+    letter = random.choice(letters)
+    return {'angle': angle, 'dir': direction, 'letter': letter, 'size': stimsize}
+       
     
-    return {'angle': angle, 'dir': direction}
-   
+    
     
 instructions()
 
 pairs = genPairs()
 
-def learningPeriod(face, desiredkey):
-    genDisplay({'text': ('You will have 30 seconds to memorize this face'),\
-        'xPos': 0, 'yPos': 5, 'heightCm': 1.5*heightMult, 'color': 'white'}).draw()
-    genDisplay({'text': 'which will be tied to the key '+ str(desiredkey),\
-        'xPos': 0, 'yPos': 3, 'heightCm': 1.5*heightMult, 'color': 'white'}).draw()
-    genDisplay({'text': 'Press spacebar to continue.',\
-        'xPos': 0, 'yPos': -3, 'heightCm': 1.5*heightMult, 'color': 'white'}).draw()
-    win.flip()
-    key = waitKeys(keyList = ['space', 'escape'])
-    if key[0] == 'escape':
-        endExp()
-    i = 0
-    while i < 1:
-        faceInfo = getFace()
-        facefile = faceInfo['file']
-        if faceInfo['facenum'] == face:
-            i+=1
-    genDisplay({'text': str(desiredkey),\
-        'xPos': 0, 'yPos': 7, 'heightCm': 1.5*heightMult, 'color': 'white'}).draw()
-    drawface.pos = (centerX, centerY)
-    drawface.draw()
-
-    win.flip()
-
-    time.sleep(30)
-    
-practiceTrials = 10
-def practiceRound(practiceTrials):
-    #start practice round
-    dispInfo = {'text': 'Practice round starts in:', 'xPos': 0, 'yPos': 4, 'heightCm': 3*heightMult, 'color': 'white'}
-    practiceText = genDisplay(dispInfo)
-    dispInfo = {'text': '', 'xPos': 0, 'yPos': -1, 'heightCm': 3*heightMult, 'color': 'white'}
-    for i in range(prePracticeBreak):
-        practiceText.draw()
-        dispInfo['text'] = str(prePracticeBreak-i) + ' seconds'
-        genDisplay(dispInfo).draw()
-        win.flip()
-        time.sleep(1)
-    
-    for i in range(practiceTrials):
-        win.flip()
-        time.sleep(1)
-        
-        cross.draw()
-        win.flip()
-        time.sleep(0.1)
-        
-        win.flip()
-    
-        delay = random.randint(6,16)/10
-    
-        time.sleep(delay)
-    
-        faceInfo = getFace()
-        
-        facefile = faceInfo['file']
-
-        drawface.draw()
-
-        win.flip()
-
-        keys = event.waitKeys(timeStamped = True) 
-
-        key = keys[0]
-
-        if key[0] == 'escape':
-            core.quit()
-        
-        if checkcorrect(key[0], faceInfo['facenum']):
-            genDisplay({'text': 'Correct!',\
-                'xPos': 0, 'yPos': 0, 'heightCm': 1.5*heightMult, 'color': 'white'}).draw()
-        else:
-            feedbackBeep.play()
-    dispInfo = {'text': 'Experiment starts in:', 'xPos': 0, 'yPos': -6, 'heightCm': 3*heightMult, 'color': 'white'}
-    endpractice2 = genDisplay(dispInfo)
-    dispInfo = {'text': '', 'xPos': 0, 'yPos': -10, 'heightCm': 3*heightMult, 'color': 'white'}
-    for i in range(postPracticeBreak):
-        endpractice2.draw()
-        dispInfo['text'] = str(postPracticeBreak-i) + ' seconds'
-        genDisplay(dispInfo).draw()
-        win.flip()
-        time.sleep(1)
- 
 
 
 #correct = 0
 #incorrect = 1
 
-learningPeriod(5, "V")
-practiceRound(20)
-
 run = 0
 mistakes = 0
 
-mistakedict = {}
-facemistakes = {}
 
+mistakedict = {}
 
 for pair in pairs:
     win.flip()
-    faceInfo = getFace()
-    facefile = faceInfo['file']
+    
     trialInfo = interpretPair(pair)
     if not inBounds(trialInfo):
         continue
@@ -332,12 +234,15 @@ for pair in pairs:
         xPos = centerX + displacement*rightXMult
     elif trialInfo['dir'] ==2:
         xPos = centerX + displacement*leftXMult
-    drawface.pos = (xPos, centerY)
-    drawface.draw()
+    
+    stimheight = displaceCalc(trialInfo['size'])*heightMult
+    displayInfo = {'text': trialInfo['letter'], 'xPos': xPos, 'yPos': centerY, 'heightCm': stimheight, 'color': 'white'}
+    displayText = genDisplay(displayInfo)
+    displayText.draw()
     times = {'start': 0, 'end': 0}
     win.timeOnFlip(times, 'start')
     win.flip()
-    keys = event.waitKeys(timeStamped = True)
+    keys = event.waitKeys(timeStamped = True, keyList = ['v', 'b', 'n', 'escape'])
     key = keys[0]
     if key[0] == 'escape':
         endExp()
@@ -345,18 +250,19 @@ for pair in pairs:
     reactionTime = times['end'] - times['start']
     buffer = 2.3 - interstimulus - reactionTime
     if buffer > 0:
-        if checkcorrect(key[0], faceInfo['facenum']):
-            output = (faceInfo['facenum'], trialInfo['dir'], trialInfo['angle'], reactionTime)
+        if checkcorrect(key[0], trialInfo['letter']):
+            output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], reactionTime, trialInfo['size'])
             csvOutput(output, fileName)
         else:
             mistakedict[mistakes] = trialInfo
-            facemistakes[mistakes] = faceInfo
             mistakes += 1
-            feedbackBeep.play()
+            output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+            csvOutput(output, fileName)
     else:
         mistakedict[mistakes] = trialInfo
-        facemistakes[mistakes] = faceInfo
         mistakes += 1
+        output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+        csvOutput(output, fileName)
     run += 1
     win.flip()
     if run%52 == 0 and run != 208:
@@ -383,8 +289,6 @@ if mistakes > 0:
     while l < mistakes:
         win.flip()
         trialInfo = mistakedict[l]
-        faceInfo = facemistakes[l]
-        facefile = faceInfo['file']
         if not inBounds(trialInfo):
             continue
         cross.draw()
@@ -396,13 +300,16 @@ if mistakes > 0:
         if trialInfo['dir'] == 0:
             xPos = centerX + displacement*rightXMult
         elif trialInfo['dir'] ==2:
-            xPos = centerX + displacement*leftXMult
-        drawface.pos = (xPos, centerY)
-        drawface.draw()
+            xPos = centerX + displacement*leftXMult  
+        
+        stimheight = displaceCalc(trialInfo['size'])*heightMult
+        displayInfo = {'text': trialInfo['letter'], 'xPos': xPos, 'yPos': centerY, 'heightCm': stimheight, 'color': 'white'}
+        displayText = genDisplay(displayInfo)
+        displayText.draw()
         times = {'start': 0, 'end': 0}
         win.timeOnFlip(times, 'start')
         win.flip()
-        keys = event.waitKeys(timeStamped = True)
+        keys = event.waitKeys(timeStamped = True, keyList = ['v', 'b', 'n', 'escape'])
         key2 = keys[0]
         if key2[0] == 'escape':
             endExp()
@@ -410,18 +317,19 @@ if mistakes > 0:
         reactionTime = times['end'] - times['start']
         buffer2 = 2.3 - interstimulus2 - reactionTime
         if buffer2 > 0:
-            if checkcorrect(key2[0], faceInfo['facenum']):
-                output = (faceInfo['facenum'], trialInfo['dir'], trialInfo['angle'], reactionTime)
+            if checkcorrect(key2[0], trialInfo['letter']):
+                output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], reactionTime, trialInfo['size'])
                 csvOutput(output, fileName)
             else:
                 mistakedict[mistakes] = trialInfo
-                facemistakes[mistakes] = faceInfo
                 mistakes += 1
-                feedbackBeep.play()
+                output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+                csvOutput(output, fileName)
         else:
             mistakedict[mistakes] = trialInfo
-            facemistakes[mistakes] = faceInfo
             mistakes += 1
+            output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+            csvOutput(output, fileName)
         run2 += 1
         l += 1
         win.flip()

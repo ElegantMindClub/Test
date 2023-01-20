@@ -17,7 +17,7 @@ import os, time, csv, random
 angles = [0]
 directions = [0, 2] #0 is right, 2 is left
 orientations = [0.0, 90.0]
-trials = 15
+trials = 30
 
 def csvOutput(output, fileName):
     with open(fileName, 'a', newline='') as csvFile:
