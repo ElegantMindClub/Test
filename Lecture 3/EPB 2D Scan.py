@@ -51,6 +51,7 @@ def endExp():
     win.flip()
     logging.flush()
     win.close()
+    
     core.quit()
 
 datadlg = gui.Dlg(title='Record Data?', pos=None, size=None, style=None,\
