@@ -1,6 +1,6 @@
 ## Base Program
 from psychopy import visual, core, event, gui
-import os, csv, time
+import os, csv, time, random
 
 # Create window
 win =  visual.Window([500,500], monitor = "TV");
@@ -17,6 +17,8 @@ if dlg.OK == False:
 _thisDir = os.path.dirname(os.path.abspath(__file__));
 os.chdir(_thisDir);
 OUTPATH = os.path.join(os.getcwd(), 'Data');
+print(OUTPATH)
+open(OUTPATH)
 
 
 outputFileName = expInfo['subject'] + '_' + expInfo['date'] + '.csv';
@@ -35,6 +37,8 @@ instr.draw();
 win.flip();
 core.wait(1);
 
+
+
 # Create variable to store times
 times = {'start': 0, 'end': 0}
 
@@ -42,14 +46,18 @@ times = {'start': 0, 'end': 0}
 for i in range(3):
     # Draw fixation cross and update the screen
     cross.draw();
-    win.timeOnFlip(times, 'start')
     win.flip();
-    core.wait(1);
+    
+    waitTime = random.random()*1.5;
+    core.wait(waitTime);
+    
     # Draw stimulus and update the screen
     stim.draw();
+    win.timeOnFlip(times, 'start')
     win.flip();
+    
+    
     keysPressed = event.waitKeys(timeStamped = True);
-
     # logic
     key = keysPressed[0];
     times['end'] = key[1];
