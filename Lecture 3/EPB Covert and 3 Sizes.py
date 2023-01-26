@@ -1,11 +1,6 @@
-# 3 Decision Code
-# This code will display the pattern at 0 degree tilt 45 degree tilt, and 90 degree tilt, testing various eccentricities
-# While the protocols do not change between covert and overt, they will be named differently
-# so we can easily distinguish them for data analysis
-
 from __future__ import absolute_import, division
 import psychopy
-
+psychopy.useVersion('latest')
 from psychopy import locale_setup, prefs, sound, gui, visual, core, data, event, logging, clock, monitors
 import numpy as np
 from numpy import (sin, cos, tan, log, log10, pi, average,
@@ -14,10 +9,11 @@ from numpy.random import random, randint, normal, shuffle
 from psychopy.hardware import keyboard
 import os, time, csv, random
 
-angles = [0]
+angles = [0, 12, 24, 36]
+sizes = [4, 6 ,8]
 directions = [0, 2] #0 is right, 2 is left
-orientations = [0.0, 45.0, 90.0]
-trials = 30
+letters = list('EPB')
+trials = 5
 
 def csvOutput(output, fileName):
     with open(fileName, 'a', newline='') as csvFile:
@@ -62,7 +58,7 @@ recordData = datadlg.OK
 
 if recordData:
     date = time.strftime("%m_%d")
-    expName = 'Gabor Three Decision Covert'
+    expName = 'EPB Covert and 3 Sizes'
     expInfo = {'Subject Name': ''}
     
     dlg = gui.DlgFromDict(dictionary=expInfo, sortKeys=False, title=expName)
@@ -90,8 +86,7 @@ elif ok_data2[0] == 'Right':
 else:
     dirExclusions = []
 
-    
-headers = ['Angle of Rotation', 'Direction', 'Eccentricity', 'Reaction Time (s)']
+headers = ['Letter', 'Direction', 'Eccentricity', 'Reaction Time (s)', 'Stim Size']
 if not os.path.isfile(fileName):
     csvOutput(headers, fileName)
 
@@ -124,16 +119,16 @@ def displaceCalc(angle):
     xDisp = np.tan(angleRad)*distToScreen
     return xDisp
     
-def checkcorrect(response, orientation):
+def checkcorrect(response, letter):
     if response == 'escape':
         endExp()
     elif response == 'v':
-        ans = 0.0
+        ans = 'E'
     elif response == 'b':
-        ans = 90.0
+        ans = 'P'
     elif response == 'n':
-        ans = 45.0
-    return (ans == orientation)
+        ans = "B"
+    return (ans == letter)
 
 cross = visual.ShapeStim(
     win=win, name='Cross', vertices='cross',units='cm', 
@@ -144,21 +139,14 @@ cross = visual.ShapeStim(
     opacity=1, depth=-1.0, interpolate=True)
     
 radius = displaceCalc(4)*circleMult
-grating = psychopy.visual.GratingStim(
-    win=win,
-    units="cm",
-    size = radius
-)    
-grating.sf = 5/radius
-grating.contrast = 1
-grating.mask = 'circle'
+
 
 def instructions():
-    genDisplay({'text': 'Press "V" when you see the grating displayed',\
+    genDisplay({'text': 'Press "V" when you see the "E" displayed',\
         'xPos': 0, 'yPos': centerY+4, 'heightCm': 1, 'color': 'white'}).draw()
-    genDisplay({'text': 'Vertically Oriented and "B" when Horizonally Oriented',\
+    genDisplay({'text': 'and "B" when you see the "P" displayed',\
         'xPos': 0, 'yPos': centerY+2, 'heightCm': 1, 'color': 'white'}).draw()
-    genDisplay({'text': 'and "N" when tilted 45 degrees',\
+    genDisplay({'text': 'and "N" when you see the "B" displayed',\
         'xPos': 0, 'yPos': centerY,'heightCm': 1, 'color': 'white'}).draw()
     genDisplay({'text': 'Please keep your eyes fixed in the center',\
         'xPos': 0, 'yPos': centerY-2,'heightCm': 1, 'color': 'white'}).draw()
@@ -183,6 +171,7 @@ def expBreak():
         win.flip()
         time.sleep(1)
         
+        
 def inBounds(trialInfo):
     if trialInfo['dir'] in dirExclusions:
         return False
@@ -199,16 +188,20 @@ def genPairs():
     for i in range(trials):
         for j in range(len(angles)):
             for k in range(len(directions)):
-                pairs.append((j*10)+k)
-    shuffle(pairs)
+                for l in range(len(sizes)):
+                    pairs.append((j*10)+k+(l*.1))
+    random.shuffle(pairs)
     return pairs
     
 def interpretPair(pair):
     angle = angles[int(pair/10)]
     direction = directions[int(pair%10)]
-    orientation = random.choice(orientations)
-    return {'angle': angle, 'dir': direction, 'orientation': orientation}
-   
+    stimsize = sizes[round((pair-int(pair))/0.1)]
+    letter = random.choice(letters)
+    return {'angle': angle, 'dir': direction, 'letter': letter, 'size': stimsize}
+       
+    
+    
     
 instructions()
 
@@ -222,10 +215,12 @@ pairs = genPairs()
 run = 0
 mistakes = 0
 
+
 mistakedict = {}
 
 for pair in pairs:
     win.flip()
+    
     trialInfo = interpretPair(pair)
     if not inBounds(trialInfo):
         continue
@@ -234,14 +229,16 @@ for pair in pairs:
     win.flip()
     interstimulus = random.uniform(.3,.8)
     time.sleep(interstimulus)
-    grating.ori = trialInfo['orientation']
     displacement = displaceCalc(trialInfo['angle'])
     if trialInfo['dir'] == 0:
         xPos = centerX + displacement*rightXMult
     elif trialInfo['dir'] ==2:
         xPos = centerX + displacement*leftXMult
-    grating.pos = (xPos, centerY)
-    grating.draw()
+    
+    stimheight = displaceCalc(trialInfo['size'])*heightMult
+    displayInfo = {'text': trialInfo['letter'], 'xPos': xPos, 'yPos': centerY, 'heightCm': stimheight, 'color': 'white'}
+    displayText = genDisplay(displayInfo)
+    displayText.draw()
     times = {'start': 0, 'end': 0}
     win.timeOnFlip(times, 'start')
     win.flip()
@@ -253,20 +250,25 @@ for pair in pairs:
     reactionTime = times['end'] - times['start']
     buffer = 2.3 - interstimulus - reactionTime
     if buffer > 0:
-        if checkcorrect(key[0], trialInfo['orientation']):
-            output = (trialInfo['orientation'], trialInfo['dir'], trialInfo['angle'], reactionTime)
+        if checkcorrect(key[0], trialInfo['letter']):
+            output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], reactionTime, trialInfo['size'])
             csvOutput(output, fileName)
         else:
             mistakedict[mistakes] = trialInfo
             mistakes += 1
+            output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+            csvOutput(output, fileName)
     else:
         mistakedict[mistakes] = trialInfo
         mistakes += 1
+        output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+        csvOutput(output, fileName)
     run += 1
     win.flip()
-    if len (dirExclusions) == 0 and run%52 == 0 and run != 208:
+    if run%52 == 0 and run != 208:
         expBreak()
-
+    if buffer > 0:
+        time.sleep(buffer)
 
 run2 = 0
 if mistakes > 0:
@@ -294,14 +296,16 @@ if mistakes > 0:
         win.flip()
         interstimulus2 = random.uniform(.3,.8)
         time.sleep(interstimulus2)
-        grating.ori = trialInfo['orientation']
         displacement = displaceCalc(trialInfo['angle'])
         if trialInfo['dir'] == 0:
             xPos = centerX + displacement*rightXMult
         elif trialInfo['dir'] ==2:
-            xPos = centerX + displacement*leftXMult
-        grating.pos = (xPos, centerY)
-        grating.draw()
+            xPos = centerX + displacement*leftXMult  
+        
+        stimheight = displaceCalc(trialInfo['size'])*heightMult
+        displayInfo = {'text': trialInfo['letter'], 'xPos': xPos, 'yPos': centerY, 'heightCm': stimheight, 'color': 'white'}
+        displayText = genDisplay(displayInfo)
+        displayText.draw()
         times = {'start': 0, 'end': 0}
         win.timeOnFlip(times, 'start')
         win.flip()
@@ -313,21 +317,26 @@ if mistakes > 0:
         reactionTime = times['end'] - times['start']
         buffer2 = 2.3 - interstimulus2 - reactionTime
         if buffer2 > 0:
-            if checkcorrect(key2[0], trialInfo['orientation']):
-                output = (trialInfo['orientation'], trialInfo['dir'], trialInfo['angle'], reactionTime)
+            if checkcorrect(key2[0], trialInfo['letter']):
+                output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], reactionTime, trialInfo['size'])
                 csvOutput(output, fileName)
             else:
                 mistakedict[mistakes] = trialInfo
                 mistakes += 1
+                output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+                csvOutput(output, fileName)
         else:
             mistakedict[mistakes] = trialInfo
             mistakes += 1
+            output = (trialInfo['letter'], trialInfo['dir'], trialInfo['angle'], 0, trialInfo['size'])
+            csvOutput(output, fileName)
         run2 += 1
         l += 1
         win.flip()
         if len (dirExclusions) == 0 and run2%52 == 0:
             expBreak()
-
+        if buffer2 > 0:
+            time.sleep(buffer2)
         
 strmistakes = str(mistakes)
 print(strmistakes + ' mistakes')

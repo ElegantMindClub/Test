@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, division
 import psychopy
-psychopy.useVersion('latest')
+
 from psychopy import locale_setup, prefs, sound, gui, visual, core, data, event, logging, clock, monitors
 import numpy as np
 from numpy import (sin, cos, tan, log, log10, pi, average,
@@ -17,7 +17,7 @@ import os, time, csv, random
 angles = [0]
 directions = [0, 2] #0 is right, 2 is left
 orientations = [0.0, 90.0]
-trials = 15
+trials = 30
 
 def csvOutput(output, fileName):
     with open(fileName, 'a', newline='') as csvFile:

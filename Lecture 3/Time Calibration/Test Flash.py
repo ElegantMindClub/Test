@@ -1,11 +1,8 @@
-# 3 Decision Code
-# This code will display the pattern at 0 degree tilt 45 degree tilt, and 90 degree tilt, testing various eccentricities
-# While the protocols do not change between covert and overt, they will be named differently
-# so we can easily distinguish them for data analysis
+#Time Delay Reflex Code
 
 from __future__ import absolute_import, division
 import psychopy
-
+psychopy.useVersion('latest')
 from psychopy import locale_setup, prefs, sound, gui, visual, core, data, event, logging, clock, monitors
 import numpy as np
 from numpy import (sin, cos, tan, log, log10, pi, average,
@@ -16,8 +13,8 @@ import os, time, csv, random
 
 angles = [0]
 directions = [0, 2] #0 is right, 2 is left
-orientations = [0.0, 45.0, 90.0]
-trials = 30
+orientations = [0.0]
+trials = 5
 
 def csvOutput(output, fileName):
     with open(fileName, 'a', newline='') as csvFile:
@@ -62,7 +59,7 @@ recordData = datadlg.OK
 
 if recordData:
     date = time.strftime("%m_%d")
-    expName = 'Gabor Three Decision Covert'
+    expName = 'Test Flash'
     expInfo = {'Subject Name': ''}
     
     dlg = gui.DlgFromDict(dictionary=expInfo, sortKeys=False, title=expName)
@@ -129,10 +126,6 @@ def checkcorrect(response, orientation):
         endExp()
     elif response == 'v':
         ans = 0.0
-    elif response == 'b':
-        ans = 90.0
-    elif response == 'n':
-        ans = 45.0
     return (ans == orientation)
 
 cross = visual.ShapeStim(
@@ -154,16 +147,12 @@ grating.contrast = 1
 grating.mask = 'circle'
 
 def instructions():
-    genDisplay({'text': 'Press "V" when you see the grating displayed',\
-        'xPos': 0, 'yPos': centerY+4, 'heightCm': 1, 'color': 'white'}).draw()
-    genDisplay({'text': 'Vertically Oriented and "B" when Horizonally Oriented',\
+    genDisplay({'text': 'Press "V" when you see the grating',\
         'xPos': 0, 'yPos': centerY+2, 'heightCm': 1, 'color': 'white'}).draw()
-    genDisplay({'text': 'and "N" when tilted 45 degrees',\
-        'xPos': 0, 'yPos': centerY,'heightCm': 1, 'color': 'white'}).draw()
     genDisplay({'text': 'Please keep your eyes fixed in the center',\
-        'xPos': 0, 'yPos': centerY-2,'heightCm': 1, 'color': 'white'}).draw()
+        'xPos': 0, 'yPos': centerY,'heightCm': 1, 'color': 'white'}).draw()
     genDisplay({'text': 'Press the spacebar to continue',\
-        'xPos': 0, 'yPos': centerY-4,'heightCm': 1, 'color': 'white'}).draw()
+        'xPos': 0, 'yPos': centerY-2,'heightCm': 1, 'color': 'white'}).draw()
     win.flip()
     keyy = event.waitKeys(keyList = ['space', 'escape']) 
     if keyy[0] == 'escape': 
@@ -245,7 +234,7 @@ for pair in pairs:
     times = {'start': 0, 'end': 0}
     win.timeOnFlip(times, 'start')
     win.flip()
-    keys = event.waitKeys(timeStamped = True, keyList = ['v', 'b', 'n', 'escape'])
+    keys = event.waitKeys(timeStamped = True, keyList = ['v', 'escape'])
     key = keys[0]
     if key[0] == 'escape':
         endExp()
@@ -264,9 +253,10 @@ for pair in pairs:
         mistakes += 1
     run += 1
     win.flip()
-    if len (dirExclusions) == 0 and run%52 == 0 and run != 208:
+    if run%52 == 0 and run != 208:
         expBreak()
-
+    if buffer > 0:
+        time.sleep(buffer)
 
 run2 = 0
 if mistakes > 0:
@@ -305,7 +295,7 @@ if mistakes > 0:
         times = {'start': 0, 'end': 0}
         win.timeOnFlip(times, 'start')
         win.flip()
-        keys = event.waitKeys(timeStamped = True, keyList = ['v', 'b', 'n', 'escape'])
+        keys = event.waitKeys(timeStamped = True, keyList = ['v', 'escape'])
         key2 = keys[0]
         if key2[0] == 'escape':
             endExp()
@@ -327,7 +317,8 @@ if mistakes > 0:
         win.flip()
         if len (dirExclusions) == 0 and run2%52 == 0:
             expBreak()
-
+        if buffer2 > 0:
+            time.sleep(buffer2)
         
 strmistakes = str(mistakes)
 print(strmistakes + ' mistakes')
