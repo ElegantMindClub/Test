@@ -17,8 +17,6 @@ if dlg.OK == False:
 _thisDir = os.path.dirname(os.path.abspath(__file__));
 os.chdir(_thisDir);
 OUTPATH = os.path.join(os.getcwd(), 'Data');
-if not os.path.isdir(OUTPATH):
-    os.mkdir(OUTPATH)
 
 
 outputFileName = expInfo['subject'] + '_' + expInfo['date'] + '.csv';
