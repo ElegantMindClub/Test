@@ -29,6 +29,7 @@ headings = ('trial','keyPressed','reactionTime','correctness');
 writer.writerow(headings);
 
 # Create instructions, fixation cross, and stimulus
+
 instr = visual.TextStim(win = win, text = "Press v when you see the stimulus", font = "arial", pos = [0,0]);
 cross = visual.ShapeStim(win=win, name='Cross', vertices = 'cross', size = 0.1, fillColor = 'white', lineColor = 'white');
 stim = visual.Circle(win = win, pos = [0,0], fillColor = 'blue');
