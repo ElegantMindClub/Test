@@ -48,6 +48,7 @@ instr = visual.TextStim(win = win, height = 0.2, text = "Press v if you see a bl
 cross = visual.ShapeStim(win=win, name='Cross', vertices = 'cross', size = 0.1, fillColor = 'white', lineColor = 'white', units = 'deg');
 blueStim = visual.Circle(win = win, pos = [0,0], fillColor = 'blue', units = 'deg');
 redStim = visual.Circle(win = win, pos = [0,0], fillColor = 'red', units = 'deg');
+greenStim = visual.Circle(win = win, pos = [0,0], fillColor = 'red', units = 'deg');
 
 # Draw instructions and update the screen
 instr.draw();
